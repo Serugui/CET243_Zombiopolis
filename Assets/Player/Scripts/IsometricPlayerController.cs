@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,29 +5,38 @@ public class IsometricPlayerController : MonoBehaviour, Controls.IPlayerActions
 {
     CharacterController controller;
 
-    private Vector2 direction;
     public float moveSpeed = 5f;
+    Vector3 forward;
+    Vector3 right;
+
+    // Variable to store ongoing movement input
+    private Vector2 movementInput;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
+
+        forward = (GameObject.Find("CameraTarget").GetComponentInChildren<Camera>()).transform.forward;
+        forward.y = 0;
+        forward = Vector3.Normalize(forward);
+        right = Quaternion.Euler(new Vector3(0, 90, 0)) * forward;
     }
     void Update()
     {
-        controller.Move(direction * moveSpeed * Time.deltaTime);
-    }
-    public void OnMove(InputAction.CallbackContext context)
-    {
-        Vector2 readVector = context.ReadValue<Vector2>();
-        Vector3 toConvert = new Vector3(readVector.x, 0, readVector.y);
-        direction = context.ReadValue<Vector2>();
+        // Calculate the movement direction based on camera orientation
+        Vector3 moveDirection = (forward * movementInput.y + right * movementInput.x).normalized;
+
+        // Move the player in the calculated direction
+        controller.Move(moveDirection * moveSpeed * Time.deltaTime);
     }
 
-    private Vector3 IsoVectorConvert(Vector3 vector)
+
+    public void OnMove(InputAction.CallbackContext context)
     {
-        Quaternion rotation = Quaternion.Euler(0, 45.0f, 0);
-        Matrix4x4 isoMatrix = Matrix4x4.Rotate(rotation);
-        Vector3 result = isoMatrix.MultiplyPoint3x4(vector);
-        return result;
+        // Get the movement values from the input context
+        movementInput = context.ReadValue<Vector2>();
     }
 }
+    
+
+
